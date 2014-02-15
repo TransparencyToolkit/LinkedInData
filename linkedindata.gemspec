@@ -1,7 +1,7 @@
 Gem::Specification.new do |s|
   s.name        = 'linkedindata'
-  s.version     = '0.0.1'
-  s.date        = '2014-01-07'
+  s.version     = '0.0.2'
+  s.date        = '2014-02-14'
   s.summary     = 'Get all LinkedIn profiles including terms you specify'
   s.description = 'Scrapes all LinkedIn profiles including terms you specify.'
   s.authors     = ['M. C. McGrath']

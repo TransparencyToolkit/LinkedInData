@@ -6,6 +6,7 @@ class LinkedinData
   def initialize(input)
    @input = input
    @output = Array.new
+   @startindex = 10
   end
 
   # Searches for links on Google
@@ -16,11 +17,9 @@ class LinkedinData
     page = agent.submit(gform, gform.buttons.first)
     examine(page)
   end
-
+ 
   # Examines a search page
   def examine(page)
-    startindex = 0
-
     page.links.each do |link|
       if (link.href.include? "linkedin.com") && (!link.href.include? "webcache") && (!link.href.include? "site:linkedin.com/pub+")
         saveurl = link.href.split("?q=")
@@ -35,10 +34,11 @@ class LinkedinData
         url1 = link.href.split("&start=")
         url2 = url1[1].split("&sa=N")
 
-        if url2[0].to_i < startindex
+        if url2[0].to_i == @startindex
+          sleep(20)
+          @startindex += 10
           agent = Mechanize.new
           examine(agent.get("http://google.com" + link.href))
-        else startindex = url2[0].to_i
         end
       end
     end
@@ -64,6 +64,9 @@ class LinkedinData
   # Gets all data and returns in JSON
   def getData
     search
-    return @output.to_json
+    return JSON.pretty_generate(@output)
   end
 end
+
+l = LinkedinData.new("National Security Agency")
+puts l.getData
