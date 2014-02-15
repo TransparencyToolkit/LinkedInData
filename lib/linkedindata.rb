@@ -68,5 +68,3 @@ class LinkedinData
   end
 end
 
-l = LinkedinData.new("National Security Agency")
-puts l.getData
