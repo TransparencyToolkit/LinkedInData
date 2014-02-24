@@ -12,6 +12,7 @@ class LinkedinData
   # Searches for links on Google
   def search
     agent = Mechanize.new
+    agent.user_agent_alias = 'Linux Firefox'
     gform = agent.get("http://google.com").form("f")
     gform.q = "site:linkedin.com/pub " + @input
     page = agent.submit(gform, gform.buttons.first)
@@ -35,7 +36,7 @@ class LinkedinData
         url2 = url1[1].split("&sa=N")
 
         if url2[0].to_i == @startindex
-          sleep(20)
+          sleep(rand(30..90))
           @startindex += 10
           agent = Mechanize.new
           examine(agent.get("http://google.com" + link.href))
@@ -67,4 +68,3 @@ class LinkedinData
     return JSON.pretty_generate(@output)
   end
 end
-
