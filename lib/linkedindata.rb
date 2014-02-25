@@ -51,12 +51,12 @@ class LinkedinData
     
     if profile
       profile.current_companies.each do |c|
-        c.merge!(:name => profile.first_name + " " + profile.last_name)
+        c.merge!(:skills => profile.skills, :certifications => profile.certifications, :languages => profile.languages, :name => profile.first_name + " " + profile.last_name)
         @output.push(c)
       end
       
       profile.past_companies.each do |c|
-        c.merge!(:name => profile.first_name + " " + profile.last_name)
+        c.merge!(:skills => profile.skills, :certifications => profile.certifications, :languages => profile.languages, :name => profile.first_name + " " + profile.last_name)
         @output.push(c)
       end
     end
@@ -68,3 +68,4 @@ class LinkedinData
     return JSON.pretty_generate(@output)
   end
 end
+
