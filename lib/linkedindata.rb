@@ -64,7 +64,7 @@ class LinkedinData
         end
       end
     end
-
+    url.gsub!("https", "http")
     profile = Linkedin::Profile.get_profile(url)
     
     if profile
