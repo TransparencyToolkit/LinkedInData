@@ -64,8 +64,11 @@ class LinkedinData
         end
       end
     end
+    begin
     url.gsub!("https", "http")
     profile = Linkedin::Profile.get_profile(url)
+    rescue
+    end
     
     if profile
       profile.current_companies.each do |c|
@@ -74,7 +77,10 @@ class LinkedinData
         if profile.picture
           path = profile.picture.split("/")
           if !File.file?("public/uploads/pictures/" + path[path.length-1].chomp.strip)
+            begin
             `wget -P public/uploads/pictures #{profile.picture}`
+            rescue
+            end
           end
           c.merge!(:pic_path => "public/uploads/pictures/" + path[path.length-1].chomp.strip)
         end
@@ -89,7 +95,10 @@ class LinkedinData
         if profile.picture
           path = profile.picture.split("/")
           if !File.file?("public/uploads/pictures/" + path[path.length-1].chomp.strip)
+            begin
             `wget -P public/uploads/pictures #{profile.picture}`
+            rescue
+            end
           end
           c.merge!(:pic_path => "public/uploads/pictures/" + path[path.length-1].chomp.strip)
         end
@@ -107,7 +116,12 @@ class LinkedinData
   # Gets related profiles listed on side of the page
   def getRelated(url) 
     if @degree < @to_degree
+      begin
       html = Nokogiri::HTML(open(url))
+      rescue
+      end
+
+      if html
       html.css("li.with-photo").each do |l|
         plink = l.css("a")[0]['href'].split("?")
 
@@ -121,9 +135,13 @@ class LinkedinData
 
         if flag == 0
           @degree += 1
+          begin
           scrape(plink[0])
+          rescue
+          end
           @degree -= 1
         end
+      end
       end
     end
   end
@@ -134,3 +152,4 @@ class LinkedinData
     return JSON.pretty_generate(@output)
   end
 end
+
