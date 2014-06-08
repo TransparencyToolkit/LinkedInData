@@ -35,7 +35,10 @@ class LinkedinData
         
         if saveurl[1]
           url = saveurl[1].split("&")
-          scrape(url[0])
+          begin
+            scrape(url[0])
+          rescue
+          end
         end
       end
 
