@@ -3,21 +3,17 @@ require 'linkedin-scraper'
 require 'json'
 require 'nokogiri'
 require 'open-uri'
+load 'parseprofile.rb'
+require 'pry'
 
 class LinkedinData
   def initialize(input, todegree)
     @input = input
     @output = Array.new
     @startindex = 10
-    @degree = 0
-    if todegree == nil
-      @to_degree = 0
-    else
-      @to_degree = todegree
-    end
   end
 
-  # Searches for links on Google
+  # Searches for profiles on Google
   def search
     agent = Mechanize.new
     agent.user_agent_alias = 'Linux Firefox'
@@ -29,6 +25,12 @@ class LinkedinData
  
   # Examines a search page
   def examine(page)
+    # Separate getting profile links and going to next page
+      # Method for getting links to all result pages
+      # Different method for getting all profile links on page and scraping (split to new thread for this)
+         # Has own output set, merge into full one at end (make sure threadsafe)
+      
+    # Have own input and output
     page.links.each do |link|
       if (link.href.include? "linkedin.com") && (!link.href.include? "webcache") && (!link.href.include? "site:linkedin.com/pub+")
         saveurl = link.href.split("?q=")
@@ -42,110 +44,34 @@ class LinkedinData
         end
       end
 
+      # Find the link to the next page and go to it
       if (link.href.include? "&sa=N") && (link.href.include? "&start=")
         url1 = link.href.split("&start=")
         url2 = url1[1].split("&sa=N")
 
         if url2[0].to_i == @startindex
-          sleep(rand(30..90))
+          sleep(rand(5..10))
           @startindex += 10
           agent = Mechanize.new
-          examine(agent.get("http://google.com" + link.href))
+          Thread.new{ examine(agent.get("http://google.com" + link.href))}
         end
       end
     end
   end
 
-  # Scrapes profile and makes JSON
+  # Scrapes profile
   def scrape(url)
-    flag = 0
-    @output.each do |o|
-      if o[:profile_url] == url
-        flag = 1
-        if @degree < o[:degree]
-          o[:degree] = @degree
-        end
-      end
-    end
+    # Download profile and rescue on error
     begin
-    url.gsub!("https", "http")
-    profile = Linkedin::Profile.get_profile(url)
+      url.gsub!("https", "http")
+      profile = Linkedin::Profile.get_profile(url)
     rescue
     end
     
+    # Parse profile if returned
     if profile
-      profile.current_companies.each do |c|
-        c.merge!(:skills => profile.skills, :certifications => profile.certifications, :languages => profile.languages, :name => profile.first_name + " " + profile.last_name, :location => profile.location, :area => profile.country, :industry => profile.industry, :picture => profile.picture, :organizations => profile.organizations, :groups => profile.groups, :education => profile.education, :websites => profile.websites, :profile_url => url, :degree => @degree, :current => "Yes")
-
-        if profile.picture
-          path = profile.picture.split("/")
-          if !File.file?("public/uploads/pictures/" + path[path.length-1].chomp.strip)
-            begin
-            `wget -P public/uploads/pictures #{profile.picture}`
-            rescue
-            end
-          end
-          c.merge!(:pic_path => "public/uploads/pictures/" + path[path.length-1].chomp.strip)
-        end
-
-        @output.push(c)
-      end
-      
-      profile.past_companies.each do |c|
-        c.merge!(:skills => profile.skills, :certifications => profile.certifications, :languages => profile.languages, :name => profile.first_name + " " + profile.last_name, :location => profile.location, :area => profile.country, :industry => profile.industry, :picture => profile.picture, :organizations => profile.organizations, :groups => profile.groups, :education => profile.education, :websites => profile.websites, :profile_url => url, :degree => @degree, :current => "No")
-        @output.push(c)
-
-        if profile.picture
-          path = profile.picture.split("/")
-          if !File.file?("public/uploads/pictures/" + path[path.length-1].chomp.strip)
-            begin
-            `wget -P public/uploads/pictures #{profile.picture}`
-            rescue
-            end
-          end
-          c.merge!(:pic_path => "public/uploads/pictures/" + path[path.length-1].chomp.strip)
-        end
-      end
-
-      # Clean up directories
-      pics = Dir["public/uploads/*.jpg.*"]
-      pics.each do |p|
-        File.delete(p)
-      end
-      getRelated(url)
-    end
-  end
-
-  # Gets related profiles listed on side of the page
-  def getRelated(url) 
-    if @degree < @to_degree
-      begin
-      html = Nokogiri::HTML(open(url))
-      rescue
-      end
-
-      if html
-      html.css("li.with-photo").each do |l|
-        plink = l.css("a")[0]['href'].split("?")
-
-        # Check to be sure not already saved
-        flag = 0
-        @output.each do |o|
-          if o[:profile_url] == plink[0]
-            flag = 1
-          end
-        end
-
-        if flag == 0
-          @degree += 1
-          begin
-          scrape(plink[0])
-          rescue
-          end
-          @degree -= 1
-        end
-      end
-      end
+      p = ParseProfile.new(profile, url)
+      @output.concat(p.parse)
     end
   end
 
@@ -155,4 +81,3 @@ class LinkedinData
     return JSON.pretty_generate(@output)
   end
 end
-
