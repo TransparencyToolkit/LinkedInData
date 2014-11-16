@@ -29,31 +29,51 @@ class LinkedinData
       # Method for getting links to all result pages
       # Different method for getting all profile links on page and scraping (split to new thread for this)
          # Has own output set, merge into full one at end (make sure threadsafe)
-      
-    # Have own input and output
-    page.links.each do |link|
+    linklist = getGoogleResults(page, Hash.new)
+
+    # Get profiles for all results
+    linklist.each do |resulturl, body|
+      Thread.new{getProfileLinks(body)}
+    end
+  end
+
+  # Get html of Google results pages
+  def getGoogleResults(html, linklist)
+    html.links.each do |link|
+     if (link.href.include? "&sa=N") && (link.href.include? "&start=")
+        url1 = link.href.split("&start=")                                                                                              
+        url2 = url1[1].split("&sa=N")
+
+        # If link matches current index, add to linklist
+        if url2[0].to_i == @startindex                                                                                                 
+          sleep(rand(5..10))
+          agent = Mechanize.new
+          page = agent.get("http://google.com"+link.href)
+          linklist["http://google.com"+link.href] = page
+          @startindex += 10
+          getGoogleResults(page, linklist)
+        end
+     end
+    end
+    return linklist
+  end
+
+  # Get and scrape profiles from page
+  def getProfileLinks(body)
+    threadout = Array.new
+
+    body.links.each do |link|
+      # Check if it links to a LinkedIn profile
       if (link.href.include? "linkedin.com") && (!link.href.include? "webcache") && (!link.href.include? "site:linkedin.com/pub+")
         saveurl = link.href.split("?q=")
         
+        # If there is a link, scrape it
         if saveurl[1]
           url = saveurl[1].split("&")
           begin
-            scrape(url[0])
+            threadout.concat(scrape(url[0]))
           rescue
           end
-        end
-      end
-
-      # Find the link to the next page and go to it
-      if (link.href.include? "&sa=N") && (link.href.include? "&start=")
-        url1 = link.href.split("&start=")
-        url2 = url1[1].split("&sa=N")
-
-        if url2[0].to_i == @startindex
-          sleep(rand(5..10))
-          @startindex += 10
-          agent = Mechanize.new
-          Thread.new{ examine(agent.get("http://google.com" + link.href))}
         end
       end
     end
@@ -71,7 +91,7 @@ class LinkedinData
     # Parse profile if returned
     if profile
       p = ParseProfile.new(profile, url)
-      @output.concat(p.parse)
+      return p.parse
     end
   end
 
@@ -81,3 +101,5 @@ class LinkedinData
     return JSON.pretty_generate(@output)
   end
 end
+
+
