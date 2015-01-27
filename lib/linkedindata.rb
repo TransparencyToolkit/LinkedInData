@@ -51,7 +51,7 @@ class LinkedinData
         url2 = url1[1].split("&sa=N")
 
         if url2[0].to_i == @startindex
-          sleep(rand(5..10))
+          sleep(rand(30..90))
           @startindex += 10
           agent = Mechanize.new
           examine(agent.get("http://google.com" + link.href))
