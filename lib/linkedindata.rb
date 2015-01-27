@@ -5,6 +5,7 @@ require 'nokogiri'
 require 'open-uri'
 load 'parseprofile.rb'
 require 'pry'
+require 'urlarchiver'
 
 class LinkedinData
   def initialize(input, todegree)
@@ -53,7 +54,7 @@ class LinkedinData
           sleep(rand(5..10))
           @startindex += 10
           agent = Mechanize.new
-          Thread.new{ examine(agent.get("http://google.com" + link.href))}
+          examine(agent.get("http://google.com" + link.href))
         end
       end
     end
@@ -78,6 +79,7 @@ class LinkedinData
   # Gets all data and returns in JSON
   def getData
     search
-    return JSON.pretty_generate(@output)
+    formatted_json = JSON.pretty_generate(@output)
+    return formatted_json
   end
 end

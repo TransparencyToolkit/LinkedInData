@@ -1,14 +1,22 @@
 require 'json'
+load 'getrelated.rb'
 
 class ParseProfile
   def initialize(profile, url)
     @profile = profile
     @url = url
     @output = Array.new
+    @related_people
   end
 
   # Parse profile
   def parse
+    begin
+      g = GetRelated.new(@url)
+      @related_people = g.getList
+    rescue
+    end
+
     # Parse profiles for current companies
     @profile.current_companies.each do |c|
       @output.push(parseCompany(c, "Yes"))
@@ -24,7 +32,7 @@ class ParseProfile
     pics.each do |p|
       File.delete(p)
     end
-
+    
     return @output
   end
 
@@ -44,7 +52,9 @@ class ParseProfile
              :education => @profile.education,
              :websites => @profile.websites,
              :profile_url => @url,
-             :current => status)
+             :current => status,
+             :timestamp => Time.now,
+             :related_people => @related_people)
     c.merge!(:pic_path => getPic)
     return c
   end
