@@ -12,6 +12,7 @@ class LinkedinData
     @input = input
     @output = Array.new
     @startindex = 10
+    @numhops = todegree
   end
 
   # Searches for profiles on Google
@@ -39,7 +40,7 @@ class LinkedinData
         if saveurl[1]
           url = saveurl[1].split("&")
           begin
-            scrape(url[0])
+            scrape(url[0], 0)
           rescue
           end
         end
@@ -61,7 +62,7 @@ class LinkedinData
   end
 
   # Scrapes profile
-  def scrape(url)
+  def scrape(url, curhops)
     # Download profile and rescue on error
     begin
       url.gsub!("https", "http")
@@ -71,7 +72,7 @@ class LinkedinData
     
     # Parse profile if returned
     if profile
-      p = ParseProfile.new(profile, url)
+      p = ParseProfile.new(profile, url, curhops)
       @output.concat(p.parse)
     end
   end
@@ -79,6 +80,24 @@ class LinkedinData
   # Gets all data and returns in JSON
   def getData
     search
+
+    # Get related profiles
+    @numhops.times do
+      @output.each do |o|
+        if o[:degree] < @numhops
+
+          if o[:related_people]
+            o[:related_people].each do |i|
+              if @output.select { |obj| obj[:name] == i[:name]}.empty?
+                scrape(i[:url], o[:degree]+1)
+              end
+            end
+          end
+
+        end
+      end
+    end
+
     formatted_json = JSON.pretty_generate(@output)
     return formatted_json
   end

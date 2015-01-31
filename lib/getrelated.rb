@@ -10,15 +10,20 @@ class GetRelated
   
   # Get the list of names of related people
   def getList
-    html = Nokogiri::HTML(open(@url))
-
+    html = Nokogiri::HTML(open(@url.gsub("http", "https")))
+    
     if html
        namelist = Array.new
 
       # Go through each person
       html.css("div.insights-browse-map").each do |d|
-        d.css("li").each do |l|
-          namelist.push(l.css("h4").text)
+        if d.css("h3").text == "People Also Viewed"
+          d.css("li").each do |l|
+            temphash = Hash.new
+            temphash[:name] = l.css("h4").text
+            temphash[:url] = l.css("a")[0]['href']
+            namelist.push(temphash)
+          end
         end
       end
 

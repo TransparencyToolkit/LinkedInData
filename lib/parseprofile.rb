@@ -2,11 +2,12 @@ require 'json'
 load 'getrelated.rb'
 
 class ParseProfile
-  def initialize(profile, url)
+  def initialize(profile, url, curhops)
     @profile = profile
     @url = url
     @output = Array.new
     @related_people
+    @curhops = curhops
   end
 
   # Parse profile
@@ -54,7 +55,8 @@ class ParseProfile
              :profile_url => @url,
              :current => status,
              :timestamp => Time.now,
-             :related_people => @related_people)
+             :related_people => @related_people,
+             :degree => @curhops)
     c.merge!(:pic_path => getPic)
     return c
   end
