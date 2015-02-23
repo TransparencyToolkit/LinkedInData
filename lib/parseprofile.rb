@@ -1,5 +1,6 @@
 require 'json'
 load 'getrelated.rb'
+require 'pry'
 
 class ParseProfile
   def initialize(profile, url, curhops)

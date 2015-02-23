@@ -6,6 +6,7 @@ require 'open-uri'
 load 'parseprofile.rb'
 require 'pry'
 require 'urlarchiver'
+require 'set'
 
 class LinkedinData
   def initialize(input, todegree)
@@ -77,6 +78,29 @@ class LinkedinData
     end
   end
 
+  # Make sure all keys that occur occur in each item (even if nil)
+  def showAllKeys(data)
+    # Get all keys
+    fields = Set.new
+    data.map { |o| fields.merge(o.keys) }
+
+    # Make sure all items have all keys
+    datarr = Array.new
+    data.each do |d|
+      temphash = Hash.new
+      fields.each do |f|
+        if !d[f]
+          temphash[f] = nil
+        else
+          temphash[f] = d[f]
+        end
+      end
+      datarr.push(temphash)
+    end
+
+    return datarr
+  end
+
   # Gets all data and returns in JSON
   def getData
     search
@@ -98,7 +122,7 @@ class LinkedinData
       end
     end
 
-    formatted_json = JSON.pretty_generate(@output)
+    formatted_json = JSON.pretty_generate(showAllKeys(@output))
     return formatted_json
   end
 end
