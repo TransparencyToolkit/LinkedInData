@@ -101,6 +101,36 @@ class LinkedinData
     return datarr
   end
 
+  # Add a score to each profile based on the # of times it appears in "people also viewed"
+  def relScore(data)
+
+    # Make list of profiles
+    profiles = Hash.new
+    data.each do |d|
+      profiles[d["profile_url"]] = 0
+    end
+
+    # Get degree for each profile
+    data.each do |i|
+      if i["related_people"]
+        i["related_people"].each do |p|
+          if profiles[p["url"]]
+            # Calculate degree- (2/d*2) except when degree is 0
+            degree_divide = i["degree"] == 0 ? 1 : i["degree"]*2
+            profiles[p["url"]] += (2.0/degree_divide)
+          end
+        end
+      end
+    end
+
+    # Merge scores back into dataset
+    data.each do |m|
+      m.merge!(:score => profiles[m["profile_url"]])
+    end
+
+    return data
+  end
+
   # Gets all data and returns in JSON
   def getData
     search
@@ -122,7 +152,8 @@ class LinkedinData
       end
     end
 
-    formatted_json = JSON.pretty_generate(showAllKeys(@output))
+    formatted_json = JSON.pretty_generate(relScore(showAllKeys(@output)))
     return formatted_json
   end
 end
+
