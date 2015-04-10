@@ -1,34 +1,40 @@
-require 'mechanize'
 require 'linkedin-scraper'
 require 'generalscraper'
 require 'json'
 require 'nokogiri'
 require 'open-uri'
+
 load 'parseprofile.rb'
+load 'get_related.rb'
+
 require 'pry'
 require 'urlarchiver'
 require 'set'
 
 class LinkedinData
-  def initialize(searchterms, todegree, proxy_list)
+  include GetRelated
+  
+  def initialize(searchterms, todegree, proxylist)
     @searchterms = searchterms
-    @proxy_list = proxy_list
+    @proxylist = IO.readlines(proxylist)
+    @proxy_list_path = proxylist
+    @usedproxies = Hash.new
     @output = Array.new
     @startindex = 10
     @numhops = todegree
   end
 
   # TODO:
+  # Clean up get related (and use generalscraper)
+  # Clean up/change parser (and use generalscraper)
   # Make it possible to just get one profile plus degrees out
-  # Change parser
-  # Refactor
   # Readme and gems
 
   # Searches for profiles on Google
   def search
-    g = GeneralScraper.new("site:linkedin.com/pub", @searchterms, @proxy_list)
+    g = GeneralScraper.new("site:linkedin.com/pub", @searchterms, @proxy_list_path)
     JSON.parse(g.getURLs).each do |profile|
-      scrape(profile, @numhops)
+      scrape(profile, 0)
     end
   end
 
@@ -43,11 +49,12 @@ class LinkedinData
     
     # Parse profile if returned
     if profile
-      p = ParseProfile.new(profile, url, curhops)
+      p = ParseProfile.new(profile, url, curhops, @proxylist, @usedproxies)
       @output.concat(p.parse)
     end
   end
 
+  # RETHINK THIS
   # Make sure all keys that occur occur in each item (even if nil)
   def showAllKeys(data)
     # Get all keys
@@ -71,61 +78,15 @@ class LinkedinData
     return datarr
   end
 
-  # Add a score to each profile based on the # of times it appears in "people also viewed"
-  def relScore(data)
-
-    # Make list of profiles
-    profiles = Hash.new
-    data.each do |d|
-      profiles[d["profile_url"]] = 0
-    end
-
-    # Get degree for each profile
-    data.each do |i|
-      if i["related_people"]
-        i["related_people"].each do |p|
-          if profiles[p["url"]]
-            # Calculate degree- (2/d*2) except when degree is 0
-            degree_divide = i["degree"] == 0 ? 1 : i["degree"]*2
-            profiles[p["url"]] += (2.0/degree_divide)
-          end
-        end
-      end
-    end
-
-    # Merge scores back into dataset
-    data.each do |m|
-      m.merge!(:score => profiles[m["profile_url"]])
-    end
-
-    return data
-  end
-
   # Gets all data and returns in JSON
   def getData
     search
-
-    # Get related profiles
-    @numhops.times do
-      @output.each do |o|
-        if o[:degree] < @numhops
-
-          if o[:related_people]
-            o[:related_people].each do |i|
-              if @output.select { |obj| obj[:name] == i[:name]}.empty?
-                scrape(i[:url], o[:degree]+1)
-              end
-            end
-          end
-
-        end
-      end
-    end
+    getRelatedProfiles
 
     formatted_json = JSON.pretty_generate(relScore(showAllKeys(@output)))
     return formatted_json
   end
 end
 
-l = LinkedinData.new("xkeyscore SIGINT", 0, "../../newproxylist")
+l = LinkedinData.new("xkeyscore SIGINT Tom Lothe Frankfurt", 1, "../../newproxylist")
 puts l.getData

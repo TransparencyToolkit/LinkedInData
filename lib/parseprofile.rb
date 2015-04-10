@@ -1,21 +1,24 @@
 require 'json'
-load 'getrelated.rb'
+load 'get_related.rb'
 require 'pry'
 
 class ParseProfile
-  def initialize(profile, url, curhops)
+  include GetRelated
+  
+  def initialize(profile, url, curhops, proxylist, usedproxies)
     @profile = profile
     @url = url
     @output = Array.new
     @related_people
     @curhops = curhops
+    @proxylist = proxylist
+    @usedproxies = usedproxies
   end
 
   # Parse profile
   def parse
     begin
-      g = GetRelated.new(@url)
-      @related_people = g.getList
+      @related_people = getList(@url)
     rescue
     end
 
