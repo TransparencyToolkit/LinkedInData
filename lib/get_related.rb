@@ -1,70 +1,77 @@
-require 'json'
-require 'nokogiri'
-require 'open-uri'
-
 module GetRelated
-  include ProxyManager
-  # TODO:
-  # Refactor and test
-  
   # Get the list of names of related people
-  def getList(html)    
-    if html
-       namelist = Array.new
+  def getList(html)
+    namelist = Array.new
        
-      # Go through each person
-      html.css("div.insights-browse-map").each do |d|
-        if d.css("h3").text == "People Also Viewed"
-          d.css("li").each do |l|
-            temphash = Hash.new
-            temphash[:name] = l.css("h4").text
-            temphash[:url] = l.css("a")[0]['href']
-            namelist.push(temphash)
-          end
+    # Save each person's name and url
+    html.css("div.insights-browse-map").each do |d|
+      if d.css("h3").text == "People Also Viewed"
+        d.css("li").each do |l|
+          namelist.push({name: l.css("h4").text,
+                         url: l.css("a")[0]['href']})
         end
       end
-      
-      return namelist
     end
+      
+    return namelist
   end
 
-  # Get profiles from related people list on side
+  
+  # Get all profiles within numhops of original(s)
   def getRelatedProfiles
     @numhops.times do |hop_count|
       @output.select { |profile| profile[:degree] == hop_count }.each do |item|
-        if item[:related_people]
-          item[:related_people].each do |related_person|
-            scrape(related_person[:url], hop_count+1) if @output.select { |person| related_person[:name] == person[:name] }.empty?
-          end
-        end
+        downloadRelated(item, hop_count) if item[:related_people]
       end
     end
+  end
+
+  # Scrapes the related profiles for one result item
+  def downloadRelated(item, hop_count)
+    item[:related_people].each do |related_person|
+      # Check if it has been scraped already
+      if @output.select { |person| related_person[:name] == person[:name] }.empty?
+        scrape(related_person[:url], hop_count+1)
+      end
+    end
+  end
+
+  
+  # Make list of profiles for score tracking
+  def fullProfileList(data)
+    profiles = Hash.new
+    data.each do |d|
+      profiles[d[:profile_url]] = 0
+    end
+    return profiles
+  end
+
+  # Adds points to a profile for showing up in related people
+  def addPointsToProfile(profile_scores, data_item, person)
+    if profile_scores[person[:url]]
+      # Calculate degree- (2/d*2) except when degree is 0
+      degree_divide = data_item[:degree] == 0 ? 1 : data_item[:degree]*2
+      profile_scores[person[:url]] += (2.0/degree_divide)
+    end
+    return profile_scores
   end
 
   # Add a score to each profile based on the # of times it appears in "people also viewed"
   def relScore(data)
-    # Make list of profiles for tracking scores
-    profiles = Hash.new
-    data.each do |d|
-      profiles[d["profile_url"]] = 0
-    end
-
-    # Get degree for each profile
-    data.each do |i|
-      if i["related_people"]
-        i["related_people"].each do |p|
-          if profiles[p["url"]]
-            # Calculate degree- (2/d*2) except when degree is 0
-            degree_divide = i["degree"] == 0 ? 1 : i["degree"]*2
-            profiles[p["url"]] += (2.0/degree_divide)
-          end
+    profile_scores = fullProfileList(data)
+    
+    # Get degree and calculate score for each profile
+    data.each do |data_item|
+      if data_item[:related_people]
+        data_item[:related_people].each do |person|
+          profile_scores = addPointsToProfile(profile_scores, data_item, person)
         end
       end
     end
 
     # Merge scores back into dataset
     data.each do |m|
-      m.merge!(:score => profiles[m["profile_url"]])
+      m.merge!(score: profile_scores[m[:profile_url]])
     end
 
     return data

@@ -2,20 +2,18 @@ require 'linkedin-scraper'
 require 'generalscraper'
 require 'json'
 require 'nokogiri'
+require 'set'
 
 load 'parse_profile.rb'
 load 'get_related.rb'
 load 'linkedin.rb'
 
-require 'pry'
-require 'set'
-
 class LinkedinData
   include GetRelated
   include ParseProfile
+  include Linkedin
   
-  def initialize(searchterms, todegree, proxylist)
-    @searchterms = searchterms
+  def initialize(todegree, proxylist)
     @proxylist = IO.readlines(proxylist)
     @proxy_list_path = proxylist
     @usedproxies = Hash.new
@@ -25,16 +23,12 @@ class LinkedinData
   end
 
   # TODO:
-  # Clean up get related (and use generalscraper)
-  # Clean up/change parser (and use generalscraper and add related)
-  # Make it possible to just get one profile plus degrees out
-  # Maybe change how proxy_manager handles vars with proxy details
-  # Look at showAllKeys again
-  # Readme and gems, clean up includes
+  # Clean up get related
+  # Build gem, remove call, update run script
 
   # Searches for profiles on Google
-  def search
-    g = GeneralScraper.new("site:linkedin.com/pub", @searchterms, @proxy_list_path)
+  def search(search_terms)
+    g = GeneralScraper.new("site:linkedin.com/pub", search_terms, @proxy_list_path)
     JSON.parse(g.getURLs).each do |profile|
       scrape(profile, 0)
     end
@@ -50,7 +44,7 @@ class LinkedinData
     end
     
     # Parse profile if returned and add to output
-    @output.concat(parseResume(profile)) if profile    
+    @output.concat(parseResume(profile)) if profile
   end
 
   # Make sure all keys that occur occur in each item (even if nil)
@@ -76,15 +70,26 @@ class LinkedinData
     return datarr
   end
 
-  # Gets all data and returns in JSON
-  def getData
-    search
+  # Gets related profiles then adds relevance scores and any missing keys
+  def prepareResults
     getRelatedProfiles
+    deleteDuplicatePics
+    return JSON.pretty_generate(relScore(showAllKeys(@output)))
+  end
 
-    formatted_json = JSON.pretty_generate(relScore(showAllKeys(@output)))
-    return formatted_json
+  # Gets one profile and the related profiles
+  def getSingleProfile(url)
+    scrape(url, 0)
+    return prepareResults
+  end
+  
+  # Gets all profiles in search results and returns in JSON
+  def getByKeywords(search_term)
+    search(search_term)
+    return prepareResults
   end
 end
 
-l = LinkedinData.new("xkeyscore SIGINT Tom Lothe Frankfurt", 1, "../../newproxylist")
-puts l.getData
+l = LinkedinData.new(1, "../../newproxylist")
+#puts l.getByKeywords("xkeyscore SIGINT Tom Lothe Frankfurt")
+puts l.getSingleProfile("https://www.linkedin.com/pub/marion-carlton/22/190/454?trk=pub-pbmap")

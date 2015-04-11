@@ -2,6 +2,7 @@ This gem finds all LinkedIn profiles including terms you specify and scrapes the
 
 To use-
 1. Download the gem 'linkedindata' and add it to your gemfile
-2. Maked a new LinedinData object: l = LinkedinData.new("search terms", # of hops to include)
-3. Get the data: l.getData
-
+2. Make a new LinkedinData object: l = LinkedinData.new(# of hops to go out, path to proxy list)
+3. Specify which profiles to get and the search terms or URL-
+Single Profile: l.getSingleProfile(url)
+List of Profiles Matching Search Terms: l.getByKeywords("search terms")

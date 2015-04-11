@@ -1,6 +1,3 @@
-require 'linkedin-scraper'
-require 'generalscraper'
-
 # Someone already made a nice gem for parsing public profiles:
 # https://github.com/yatish27/linkedin-scraper
 # This class reopens that to add extra things I need

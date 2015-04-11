@@ -1,6 +1,3 @@
-require 'json'
-require 'pry'
-
 module ParseProfile
   # Parse profile into items by company
   def parseResume(profile)
@@ -16,7 +13,6 @@ module ParseProfile
       output.push(addPersonFields(c, "No", profile))
     end
 
-    deleteDuplicatePics
     return output
   end
 
@@ -31,24 +27,24 @@ module ParseProfile
   # Merge person data with role data   
   def addPersonFields(c, status, profile)
     c.merge!(
-             :skills => profile.skills,
-             :certifications => profile.certifications,
-             :languages => profile.languages,
-             :name => profile.name,
-             :location => profile.location,
-             :area => profile.country,
-             :industry => profile.industry,
-             :picture => profile.picture,
-             :organizations => profile.organizations,
-             :groups => profile.groups,
-             :education => profile.education,
-             :websites => profile.websites,
-             :profile_url => profile.profile_url,
-             :current => status,
-             :timestamp => profile.timestamp,
-             :related_people => profile.related_people,
-             :degree => profile.degree,
-             :pic_path => profile.pic_path)
+             skills: profile.skills,
+             certifications: profile.certifications,
+             languages: profile.languages,
+             name: profile.name,
+             location: profile.location,
+             area: profile.country,
+             industry: profile.industry,
+             picture: profile.picture,
+             organizations: profile.organizations,
+             groups: profile.groups,
+             education: profile.education,
+             websites: profile.websites,
+             profile_url: profile.profile_url,
+             current: status,
+             timestamp: profile.timestamp,
+             related_people: profile.related_people,
+             degree: profile.degree,
+             pic_path: profile.pic_path)
     return c
   end
 end
