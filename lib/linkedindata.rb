@@ -36,11 +36,11 @@ class LinkedinData
     begin
       url.gsub!("https", "http")
       profile = Linkedin::Profile.get_profile(url, curhops, @proxylist, @usedproxies)
+
+      # Parse profile if returned and add to output
+      @output.concat(parseResume(profile)) if profile
     rescue
     end
-    
-    # Parse profile if returned and add to output
-    @output.concat(parseResume(profile)) if profile
   end
 
   # Make sure all keys that occur occur in each item (even if nil)
