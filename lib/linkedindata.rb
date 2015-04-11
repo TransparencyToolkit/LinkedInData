@@ -22,10 +22,6 @@ class LinkedinData
     @numhops = todegree
   end
 
-  # TODO:
-  # Clean up get related
-  # Build gem, remove call, update run script
-
   # Searches for profiles on Google
   def search(search_terms)
     g = GeneralScraper.new("site:linkedin.com/pub", search_terms, @proxy_list_path)
@@ -89,7 +85,3 @@ class LinkedinData
     return prepareResults
   end
 end
-
-l = LinkedinData.new(1, "../../newproxylist")
-#puts l.getByKeywords("xkeyscore SIGINT Tom Lothe Frankfurt")
-puts l.getSingleProfile("https://www.linkedin.com/pub/marion-carlton/22/190/454?trk=pub-pbmap")

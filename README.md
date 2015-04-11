@@ -6,3 +6,5 @@ To use-
 3. Specify which profiles to get and the search terms or URL-
 Single Profile: l.getSingleProfile(url)
 List of Profiles Matching Search Terms: l.getByKeywords("search terms")
+
+[![Code Climate](https://codeclimate.com/github/TransparencyToolkit/LinkedInData/badges/gpa.svg)](https://codeclimate.com/github/TransparencyToolkit/LinkedInData)
