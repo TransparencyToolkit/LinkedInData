@@ -2,17 +2,17 @@ require 'linkedin-scraper'
 require 'generalscraper'
 require 'json'
 require 'nokogiri'
-require 'open-uri'
 
-load 'parseprofile.rb'
+load 'parse_profile.rb'
 load 'get_related.rb'
+load 'linkedin.rb'
 
 require 'pry'
-require 'urlarchiver'
 require 'set'
 
 class LinkedinData
   include GetRelated
+  include ParseProfile
   
   def initialize(searchterms, todegree, proxylist)
     @searchterms = searchterms
@@ -26,9 +26,11 @@ class LinkedinData
 
   # TODO:
   # Clean up get related (and use generalscraper)
-  # Clean up/change parser (and use generalscraper)
+  # Clean up/change parser (and use generalscraper and add related)
   # Make it possible to just get one profile plus degrees out
-  # Readme and gems
+  # Maybe change how proxy_manager handles vars with proxy details
+  # Look at showAllKeys again
+  # Readme and gems, clean up includes
 
   # Searches for profiles on Google
   def search
@@ -38,23 +40,19 @@ class LinkedinData
     end
   end
 
-  # Scrapes profile
+  # Scrapes and parses individual profile
   def scrape(url, curhops)
     # Download profile and rescue on error
     begin
       url.gsub!("https", "http")
-      profile = Linkedin::Profile.get_profile(url)
+      profile = Linkedin::Profile.get_profile(url, curhops, @proxylist, @usedproxies)
     rescue
     end
     
-    # Parse profile if returned
-    if profile
-      p = ParseProfile.new(profile, url, curhops, @proxylist, @usedproxies)
-      @output.concat(p.parse)
-    end
+    # Parse profile if returned and add to output
+    @output.concat(parseResume(profile)) if profile    
   end
 
-  # RETHINK THIS
   # Make sure all keys that occur occur in each item (even if nil)
   def showAllKeys(data)
     # Get all keys

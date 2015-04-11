@@ -8,9 +8,7 @@ module GetRelated
   # Refactor and test
   
   # Get the list of names of related people
-  def getList(url)
-    html = Nokogiri::HTML(getPage(url).body)
-    
+  def getList(html)    
     if html
        namelist = Array.new
        
