@@ -40,6 +40,7 @@ module ParseProfile
              education: profile.education,
              websites: profile.websites,
              profile_url: profile.profile_url,
+             summary: profile.summary,
              current: status,
              timestamp: profile.timestamp,
              related_people: profile.related_people,
