@@ -6,7 +6,7 @@ module Linkedin
     include ProxyManager
     include GetRelated
     
-    def initialize(url, curhops, proxylist, usedproxies)
+    def initialize(url, curhops, proxylist, usedproxies, use_proxies_li)
       @linkedin_url = url
       @curhops = curhops
       @proxylist = proxylist
@@ -19,12 +19,13 @@ module Linkedin
         "timestamp",
         "degree",
         "pic_path")
-      @page = getPage(url) # Get pages with proxies
+      
+      @page = getPage(url, use_proxies_li) # Get pages with proxies
     end
 
 
-    def self.get_profile(url, curhops, proxylist, usedproxies)
-      Linkedin::Profile.new(url, curhops, proxylist, usedproxies)
+    def self.get_profile(url, curhops, proxylist, usedproxies, use_proxies_li)
+      Linkedin::Profile.new(url, curhops, proxylist, usedproxies, use_proxies_li)
     rescue => e
       puts e
     end

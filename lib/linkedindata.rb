@@ -3,6 +3,7 @@ require 'generalscraper'
 require 'json'
 require 'nokogiri'
 require 'set'
+require 'pry'
 
 load 'parse_profile.rb'
 load 'get_related.rb'
@@ -13,18 +14,20 @@ class LinkedinData
   include ParseProfile
   include Linkedin
   
-  def initialize(todegree, proxylist)
+  def initialize(todegree, proxylist, use_proxy, use_proxy_li)
     @proxylist = IO.readlines(proxylist)
     @proxy_list_path = proxylist
     @usedproxies = Hash.new
     @output = Array.new
     @startindex = 10
     @numhops = todegree
+    @use_proxy = use_proxy
+    @use_proxy_li = use_proxy_li
   end
 
   # Searches for profiles on Google
   def search(search_terms)
-    g = GeneralScraper.new("site:linkedin.com/pub", search_terms, @proxy_list_path)
+    g = GeneralScraper.new("site:linkedin.com/pub", search_terms, @proxy_list_path, @use_proxy)
     JSON.parse(g.getURLs).each do |profile|
       scrape(profile, 0)
     end
@@ -35,7 +38,7 @@ class LinkedinData
     # Download profile and rescue on error
     begin
       url.gsub!("https", "http")
-      profile = Linkedin::Profile.get_profile(url, curhops, @proxylist, @usedproxies)
+      profile = Linkedin::Profile.get_profile(url, curhops, @proxylist, @usedproxies, @use_proxy_li)
 
       # Parse profile if returned and add to output
       @output.concat(parseResume(profile)) if profile
