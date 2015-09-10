@@ -28,9 +28,18 @@ class LinkedinData
   # Searches for profiles on Google
   def search(search_terms)
     g = GeneralScraper.new("site:linkedin.com/pub", search_terms, @proxy_list_path, @use_proxy)
+    gen_driver
+    
     JSON.parse(g.getURLs).each do |profile|
       scrape(profile, 0)
     end
+  end
+
+  # Generate driver for searches
+  def gen_driver
+    profile = Selenium::WebDriver::Firefox::Profile.new
+    profile['intl.accept_languages'] = 'en'
+    @driver = Selenium::WebDriver.for :firefox, profile: profile
   end
 
   # Scrapes and parses individual profile
@@ -38,7 +47,7 @@ class LinkedinData
     # Download profile and rescue on error
     begin
       url.gsub!("https", "http")
-      profile = Linkedin::Profile.get_profile(url, curhops, @proxylist, @usedproxies, @use_proxy_li)
+      profile = Linkedin::Profile.get_profile(url, @driver, curhops, @proxylist, @usedproxies, @use_proxy_li)
 
       # Parse profile if returned and add to output
       @output.concat(parseResume(profile)) if profile
@@ -73,6 +82,7 @@ class LinkedinData
   def prepareResults
     getRelatedProfiles
     deleteDuplicatePics
+    @driver.close
     return JSON.pretty_generate(relScore(showAllKeys(@output)))
   end
 

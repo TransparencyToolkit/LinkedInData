@@ -6,7 +6,7 @@ module Linkedin
     include ProxyManager
     include GetRelated
     
-    def initialize(url, curhops, proxylist, usedproxies, use_proxies_li)
+    def initialize(url, driver, curhops, proxylist, usedproxies, use_proxies_li)
       @linkedin_url = url
       @curhops = curhops
       @proxylist = proxylist
@@ -19,20 +19,23 @@ module Linkedin
         "timestamp",
         "degree",
         "pic_path")
-      
-      @page = getPage(url, use_proxies_li) # Get pages with proxies
+
+      # Get page
+      @driver = driver
+      @page = Nokogiri::HTML(getPage(url, @driver, nil, 5, use_proxies_li).page_source)
+      sleep(10)
     end
 
 
-    def self.get_profile(url, curhops, proxylist, usedproxies, use_proxies_li)
-      Linkedin::Profile.new(url, curhops, proxylist, usedproxies, use_proxies_li)
+    def self.get_profile(url, driver, curhops, proxylist, usedproxies, use_proxies_li)
+      Linkedin::Profile.new(url, driver, curhops, proxylist, usedproxies, use_proxies_li)
     rescue => e
       puts e
     end
 
     # Gets "people also viewed list" form profile sidebar
     def related_people
-      @related_people ||= getList(Nokogiri::HTML(@page.body))
+      @related_people ||= getList(@page)
     end
 
     # Similar to linkedin_url
